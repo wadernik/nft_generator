@@ -2,3 +2,4 @@
 /example
 /images
 *.json
+!config.json

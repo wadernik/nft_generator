@@ -1,6 +1,7 @@
 <?php
 
 require 'FolderHandler.php';
+require 'ConfigParser.php';
 
 function pickRandomPropertyOne(array $category): string
 {
@@ -21,23 +22,6 @@ $outputResolution = [
     'height' => 1080,
 ];
 
-$backgroundFolderName = 'BG';
-$backgroundAdditionalFirstFolderName = 'BG1';
-$backgroundAdditionalSecondFolderName = 'BG2';
-
-$layers = [
-    'BG' => 0,
-    'BG2' => 1,
-    'BG1' => 2,
-    'body' => 3,
-    'shoes' => 4,
-    'bottom-garment' => 5,
-    'top-garment' => 6,
-    'head' => 7,
-    'hand-L' => 8,
-    'hand-R' => 9,
-];
-
 $propertiesSeparator = '_';
 
 // Probabilities
@@ -51,7 +35,9 @@ $sourceDirectory = "$currentPath/images";
 $content = [];
 parseFolders($sourceDirectory, $content);
 
-$forJsonTest = [];
+parseConfig();
+
+$firstJsonData = [];
 $counter = 0;
 for ($i = 1; $i <= $amountOfBatches; $i++) {
     $topGarment = $content['top-garment'];
@@ -78,9 +64,9 @@ for ($i = 1; $i <= $amountOfBatches; $i++) {
         . $propertiesSeparator . $bottomGarmentPropertyOne . $propertiesSeparator . $bottomGarmentPropertyTwo
         . $propertiesSeparator . $shoesPropertyOne . $propertiesSeparator . $shoesPropertyTwo;
 
-    if (!isset($forJsonTest[$combinedKey])) {
+    if (!isset($firstJsonData[$combinedKey])) {
         $counter++;
-        $forJsonTest[$combinedKey] = [
+        $firstJsonData[$combinedKey] = [
             'top-garment' => [
                 'property_1' => $topGarmentPropertyOne,
                 'property_2' => $topGarmentPropertyTwo,
@@ -97,7 +83,11 @@ for ($i = 1; $i <= $amountOfBatches; $i++) {
     }
 }
 
-$forJsonTestAsJson = json_encode($forJsonTest);
-file_put_contents('1.json', $forJsonTestAsJson);
+$firstJsonDataAsJson = [];
+foreach ($firstJsonData as $dataEntry) {
+    $firstJsonDataAsJson[] = $dataEntry;
+}
+
+file_put_contents('1.json', json_encode($firstJsonDataAsJson, JSON_THROW_ON_ERROR));
 
 echo $counter . "\n";
