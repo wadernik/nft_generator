@@ -1,11 +1,11 @@
 {
   "properties_separator": "_",
-  "amount_of_batches": 10000,
+  "amount_of_batches": 100,
   "output_resolution": {
     "width": 1080,
     "height": 18080
   },
-  "categories": {
+  "categories_layers": {
     "BG": 0,
     "BG2": 1,
     "BG1": 2,
@@ -18,53 +18,13 @@
     "hand-R": 9
   },
   "categories_probabilities": {
-    "top-garment": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "bottom-garment": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "shoes": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "head": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "body": {
-      "property_1": "=head.property_1",
-      "property_2": "clear: 50, other: random"
-    },
-    "hand-R": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "hand-L": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "BG1": {
-      "property_1": "random",
-      "property_2": "random"
-    },
-    "BG2": {
-      "property_1": "random",
-      "property_2": "random"
-    },
     "BG": {
-      "special": {
-        "property_1 === color": {
-          "property_1": "80",
-          "property_2": "=(top-garment.property_2 OR bottom-garment.property_2)"
-        },
-        "property_2 !== color": {
-          "property_1": "20",
-          "property_2": "random"
-        }
-      }
+      "probability": 80,
+      "rule": "color"
+    },
+    "Body": {
+      "probability": 50,
+      "rule": "clear"
     }
   }
 }

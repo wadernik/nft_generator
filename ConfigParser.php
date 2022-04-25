@@ -1,13 +1,13 @@
 <?php
 
-use JetBrains\PhpStorm\ArrayShape;
-
 const DEFAULT_PROPERTIES_SEPARATOR = '_';
 const DEFAULT_AMOUNT_OF_BATCHES = 10;
 const DEFAULT_OUTPUT_WIDTH = 100;
 const DEFAULT_OUTPUT_HEIGHT = 100;
-const DEFAULT_PROBABILITY = 'random';
 
+/**
+ * @return array
+ */
 function parseConfig(): array
 {
     $currentPath = getcwd();
@@ -15,37 +15,28 @@ function parseConfig(): array
 
     $contents = file_get_contents($configPath);
 
-    // TODO add try-catch
-    $contents = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+    try {
+        $contents = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
 
-    $contents = parseContents($contents);
-
-    parseProbabilities($contents['categories_probabilities']);
-
-    return $contents;
+        return [
+            'properties_separator' => $contents['properties_separator'] ?? DEFAULT_PROPERTIES_SEPARATOR,
+            'amount_of_batches' => $contents['amount_of_batches'] ?? DEFAULT_AMOUNT_OF_BATCHES,
+            'output_resolution' => [
+                'width' => (int) ($contents['output_resolution']['width'] ?? DEFAULT_OUTPUT_WIDTH),
+                'height' => (int) ($contents['output_resolution']['height'] ?? DEFAULT_OUTPUT_HEIGHT),
+            ],
+            'categories_layers' => $contents['categories_layers'] ?? [],
+            'categories_probabilities' => $contents['categories_probabilities'] ?? [],
+        ];
+    } catch (\Exception $e) {
+        return [];
+    }
 }
 
-#[ArrayShape([
-    'properties_separator' => "string",
-    'amount_of_batches' => "int",
-    'output_resolution' => "int[]",
-    'categories' => "array",
-    'categories_probabilities' => "array"
-])]
-function parseContents($contents): array
-{
-    return [
-        'properties_separator' => $contents['properties_separator'] ?? DEFAULT_PROPERTIES_SEPARATOR,
-        'amount_of_batches' => $contents['amount_of_batches'] ?? DEFAULT_AMOUNT_OF_BATCHES,
-        'output_resolution' => [
-            'width' => (int) ($contents['output_resolution']['width'] ?? DEFAULT_OUTPUT_WIDTH),
-            'height' => (int) ($contents['output_resolution']['height'] ?? DEFAULT_OUTPUT_HEIGHT),
-        ],
-        'categories' => $contents['categories'] ?? [],
-        'categories_probabilities' => $contents['categories_probabilities'] ?? [],
-    ];
-}
-
+/**
+ * @param array $categoriesProbabilities
+ * @return array
+ */
 function parseProbabilities(array $categoriesProbabilities): array
 {
     foreach ($categoriesProbabilities as $categoryName => $category) {
@@ -68,6 +59,11 @@ function parseProbabilities(array $categoriesProbabilities): array
     return [];
 }
 
+/**
+ * @param string $propertyRule
+ * @param array $categories
+ * @return array|string
+ */
 function parsePropertyRule(string $propertyRule, array $categories): array|string
 {
     switch ($propertyRule) {
@@ -85,12 +81,20 @@ function parsePropertyRule(string $propertyRule, array $categories): array|strin
     return $rule;
 }
 
+/**
+ * @param string $propertyRule
+ * @return array
+ */
 function getRuleForEquality(string $propertyRule): array
 {
     $splits = explode('.', substr($propertyRule, 1));
     return [trim($splits[0]) => trim($splits[1])];
 }
 
+/**
+ * @param string $propertyRule
+ * @return array
+ */
 function getRuleForConstants(string $propertyRule): array
 {
     $splits = [];
