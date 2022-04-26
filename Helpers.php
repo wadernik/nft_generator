@@ -34,7 +34,7 @@ function pickPropertyWithRule( array $category, int $probability, string $probab
     $randomInt = random_int(1, 10);
     $shouldUseRule = false;
 
-    if ($randomInt < ($probability / 10)) {
+    if ($randomInt <= ($probability / 10)) {
         $shouldUseRule = true;
     }
 
