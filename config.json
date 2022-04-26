@@ -1,9 +1,10 @@
 {
   "properties_separator": "_",
   "amount_of_batches": 100,
+  "output_directory": "results",
   "output_resolution": {
     "width": 1080,
-    "height": 18080
+    "height": 1080
   },
   "categories_layers": {
     "BG": 0,

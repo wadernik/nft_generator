@@ -1,37 +1,9 @@
 <?php
 
-require 'SourcesHandler.php';
-require 'ConfigParser.php';
 require 'Helpers.php';
-
-/**
- * @param array $category
- * @param int $probability
- * @param string $probabilityRule
- * @return array
- * @throws Exception
- */
-function pickPropertyWithRule(array $category, int $probability, string $probabilityRule): array
-{
-    $randomInt = random_int(1, 10);
-    $shouldUseRule = false;
-
-    if ($randomInt < ($probability / 10)) {
-        $shouldUseRule = true;
-    }
-
-    $propertiesToChoose = array_filter(
-        $category,
-        static function ($entry) use ($probabilityRule, $shouldUseRule) {
-            return $shouldUseRule
-                ? str_starts_with($entry, $probabilityRule)
-                : !str_starts_with($entry, $probabilityRule);
-        },
-        ARRAY_FILTER_USE_KEY
-    );
-
-    return [$shouldUseRule, $propertiesToChoose];
-}
+require 'ConfigParser.php';
+require 'NFTBuilder.php';
+require 'SourcesHandler.php';
 
 /**
  * @param int $amountOfBatches
@@ -170,7 +142,7 @@ function generateDataForSecondJson(
     $headPropertiesAmount = countPropertiesVariations($head);
     $bodyPropertiesAmount = countPropertiesVariations($body);
 
-    $totalUniqueVariationsAmount = $headPropertiesAmount * $bodyPropertiesAmount;
+    $totalUniqueVariationsAmount = $headPropertiesAmount * $bodyPropertiesAmount / count($head);
 
     $generatedDataCounter = 1;
     $jsonData = [];
@@ -183,12 +155,17 @@ function generateDataForSecondJson(
 
         // --------- Body --------- //
         $bodyPropertyOne = $headPropertyOne;
-        [$shouldUseRule, $propertiesToChoose] = pickPropertyWithRule($head, $bodyProbability, $bodyProbabilityRule);
+        [$shouldUseRule, $propertiesToChoose] = pickPropertyWithRule(
+            $body[$bodyPropertyOne],
+            $bodyProbability,
+            $bodyProbabilityRule,
+            useKey: false
+        );
 
         if ($shouldUseRule) {
-            $bodyPropertyTwo = array_key_first($propertiesToChoose);
+            $bodyPropertyTwo = $propertiesToChoose[array_key_first($propertiesToChoose)];
         } else {
-            $bodyPropertyTwo = array_rand($propertiesToChoose);
+            $bodyPropertyTwo = $propertiesToChoose[array_rand($propertiesToChoose)];
         }
         // ------------------------ //
 
@@ -315,6 +292,62 @@ function generateDataForThirdJson(
 }
 
 /**
+ * @param array $firstJson
+ * @param array $secondJson
+ * @param array $thirdJson
+ * @param array $fourthJson
+ * @param array $layers
+ * @param array $outputResolution
+ * @param string $outputDirectory
+ * @param string $sourceDirectory
+ * @param string $propertiesSeparator
+ * @return array
+ */
+function buildFinalJsonWithNFT(
+    array $firstJson,
+    array $secondJson,
+    array $thirdJson,
+    array $fourthJson,
+    array $layers,
+    array $outputResolution,
+    string $outputDirectory,
+    string $sourceDirectory,
+    string $propertiesSeparator
+): array {
+    // Берем первый json для определения количества сгенерированных элементов
+    $amountOfElements = count($firstJson);
+    $finalJson = [];
+
+    if (!mkdir($outputDirectory) && !is_dir($outputDirectory)) {
+        throw new \RuntimeException(sprintf('Directory "%s" was not created', $outputDirectory));
+    }
+
+    for ($i = 0; $i < $amountOfElements; $i++) {
+        $jsonEntry = array_merge(
+            $firstJson[$i],
+            $secondJson[$i],
+            $thirdJson[$i],
+            $fourthJson[$i]
+        );
+
+        foreach ($layers as $layerName => $layerValue) {
+            $finalJson[$i][$layerName] = $jsonEntry[$layerName];
+        }
+
+        buildNftImage(
+            $finalJson[$i],
+            $outputResolution,
+            $sourceDirectory,
+            $outputDirectory,
+            $propertiesSeparator,
+            (string) ($i + 1)
+        );
+    }
+
+    return $finalJson;
+}
+
+/**
  * Основная функция
  * @throws Exception
  */
@@ -325,7 +358,10 @@ function main(): void
     // Settings
     $amountOfBatches = $config['amount_of_batches'];
     $outputResolution = $config['output_resolution'];
+    $outputDirectory = $config['output_directory'];
     $propertiesSeparator = $config['properties_separator'];
+    $layers = $config['categories_layers'];
+
     $bgProbability = $config['categories_probabilities']['BG']['probability'] ?? 80;
     $bgProbabilityRule = $config['categories_probabilities']['BG']['rule'] ?? 'color';
     $bodyProbability = $config['categories_probabilities']['body']['probability'] ?? 50;
@@ -376,21 +412,42 @@ function main(): void
         $propertiesSeparator
     );
 
+    $firstJsonData = resetKeys($firstJsonData);
+    $secondJsonData = resetKeys($secondJsonData);
+    $thirdJsonData = resetKeys($thirdJsonData);
+    $fourthJsonData = resetKeys($fourthJsonData);
+
+    $finalJsonData = buildFinalJsonWithNFT(
+        $firstJsonData,
+        $secondJsonData,
+        $thirdJsonData,
+        $fourthJsonData,
+        $layers,
+        $outputResolution,
+        $outputDirectory,
+        $sourceDirectory,
+        $propertiesSeparator
+    );
+
     echo 'First json generated combinations amount: ' . count($firstJsonData) . "\n";
     echo 'Second json generated combinations amount: ' . count($secondJsonData) . "\n";
     echo 'Third json generated combinations amount: ' . count($thirdJsonData) . "\n";
     echo 'Fourth json generated combinations amount: ' . count($fourthJsonData) . "\n";
+    echo 'Final json data amount: ' . count($finalJsonData) . "\n";
 
     $firstJsonDataAsJson = convertToJson($firstJsonData);
     $secondJsonDataAsJson = convertToJson($secondJsonData);
     $thirdJsonDataAsJson = convertToJson($thirdJsonData);
     $fourthJsonDataAsJson = convertToJson($fourthJsonData);
+    $finalJsonDataAsJson = convertToJson($finalJsonData);
+
 
     try {
         file_put_contents('1.json', $firstJsonDataAsJson);
         file_put_contents('2.json', $secondJsonDataAsJson);
         file_put_contents('3.json', $thirdJsonDataAsJson);
         file_put_contents('4.json', $fourthJsonDataAsJson);
+        file_put_contents('final.json', $finalJsonDataAsJson);
     } catch (\Exception $e) {
         // do nothing, idk
     }

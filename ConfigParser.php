@@ -1,6 +1,7 @@
 <?php
 
 const DEFAULT_PROPERTIES_SEPARATOR = '_';
+const DEFAULT_OUTPUT_DIRECTORY = 'results';
 const DEFAULT_AMOUNT_OF_BATCHES = 10;
 const DEFAULT_OUTPUT_WIDTH = 100;
 const DEFAULT_OUTPUT_HEIGHT = 100;
@@ -21,6 +22,7 @@ function parseConfig(): array
         return [
             'properties_separator' => $contents['properties_separator'] ?? DEFAULT_PROPERTIES_SEPARATOR,
             'amount_of_batches' => $contents['amount_of_batches'] ?? DEFAULT_AMOUNT_OF_BATCHES,
+            'output_directory' => $contents['output_directory'] ?? DEFAULT_OUTPUT_DIRECTORY,
             'output_resolution' => [
                 'width' => (int) ($contents['output_resolution']['width'] ?? DEFAULT_OUTPUT_WIDTH),
                 'height' => (int) ($contents['output_resolution']['height'] ?? DEFAULT_OUTPUT_HEIGHT),
