@@ -1,6 +1,6 @@
 {
   "properties_separator": "_",
-  "amount_of_batches": 10,
+  "amount_of_batches": 100,
   "output_directory": "results",
   "output_resolution": {
     "width": 1080,
