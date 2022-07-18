@@ -1,6 +1,6 @@
 /.idea
 /example
-/images
+/source_materials
 /results
 *.json
 !config.json

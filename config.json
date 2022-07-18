@@ -1,6 +1,6 @@
 {
   "properties_separator": "_",
-  "amount_of_batches": 100,
+  "amount_of_batches": 10,
   "output_directory": "results",
   "output_resolution": {
     "width": 1080,
@@ -18,14 +18,27 @@
     "hand-L": 8,
     "hand-R": 9
   },
-  "categories_probabilities": {
-    "BG": {
-      "probability": 80,
-      "rule": "color"
-    },
-    "Body": {
-      "probability": 50,
-      "rule": "clear"
+  "color_ratio": {
+    "bottom-garment": {
+      "source": "top-garment",
+      "colors": {
+        "red": {
+          "red": 0.4,
+          "black": 0.4,
+          "orange": 0.2
+        },
+        "blue": {
+          "blue": 0.45,
+          "black": 0.45,
+          "purple": 0.1
+        }
+      }
+    }
+  },
+  "rarity": {
+    "top-garment": {
+      "hoodie": 0.4,
+      "tshirt": 0.6
     }
   }
 }
