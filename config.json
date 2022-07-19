@@ -33,12 +33,26 @@
           "purple": 0.1
         }
       }
+    },
+    "shoes": {
+      "source": "top-garment"
+    },
+    "body": {
+      "source": "head"
+    },
+    "BG": {
+      "colors": {
+        "color": 0.8
+      }
     }
   },
   "rarity": {
     "top-garment": {
       "hoodie": 0.4,
       "tshirt": 0.6
+    },
+    "body": {
+      "clear": 0.5
     }
   }
 }

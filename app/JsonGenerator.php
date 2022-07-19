@@ -24,40 +24,79 @@ class JsonGenerator
             $totalUniqueVariationsAmount *= self::countPropertiesVariations($object);
         }
 
-        $dataToAppend = [];
-        foreach ($objects as $objectName => $object) {
-            // print_r($object);
+        while ($generatedDataCounter <= $amountOfBatches) {
+            $currentBatchData = [];
+            foreach ($objects as $objectName => $object) {
+                // ------------ Color handling ------------------ //
+                $colorRatioSource = $colorRatio[$objectName]['source'] ?? null;
+                $colorRatioColors = $colorRatio[$objectName]['colors'] ?? [];
+                $sourceColor = $currentBatchData[$colorRatioSource]['property_1'] ?? null;
 
-            $colorRatioSource = $colorRatio[$objectName]['source'] ?? null;
-            $colorRatioColors = $colorRatio[$objectName]['colors'] ?? [];
+                // print_r("Object: $objectName\n");
+                // print_r("Source: $colorRatioSource\n");
+                // print_r("Source color: $sourceColor\n");
+                // print_r("Colors:\n");
+                // print_r($colorRatioColors);
 
-            $sourceColor = $dataToAppend[$colorRatioSource]['property_1'] ?? null;
+                // TODO: optimize this
+                if (!empty($colorRatioSource) && empty($colorRatioColors) && $sourceColor) {
+                    // print_r("Color is set to one from source\n");
+                    // if (!isset($object[$sourceColor])) {
+                    //     print_r("Color '$sourceColor' doesn't exist in '$objectName' pool. Picking random one.\n");
+                    // }
+                    $colorProperty = isset($object[$sourceColor]) ? $sourceColor : self::pickRandomProperty($object);
+                }
+                elseif (isset($colorRatioColors[$sourceColor])) {
+                    if ($sourceColor) {
+                        $pickedColor = self::pickPropertyWithProbability($colorRatioColors[$sourceColor]);
+                    } else {
+                        $pickedColor = self::pickPropertyWithProbability($colorRatioColors);
+                    }
 
-            if ($sourceColor && isset($colorRatioColors[$sourceColor])) {
-                $pickedColor = self::pickPropertyWithProbability($colorRatioColors[$sourceColor]);
-                $colorProperty = isset($object[$pickedColor]) ? $pickedColor : self::pickRandomProperty($object);
-            } else {
-                $colorProperty = self::pickRandomProperty($object);
+                    $colorProperty = isset($object[$pickedColor]) ? $pickedColor : self::pickRandomProperty($object);
+                } else {
+                    $colorProperty = self::pickRandomProperty($object);
+                }
+
+                // ------------ Item handling ------------------- //
+                $raritySource = $rarity[$objectName] ?? [];
+
+                if ($raritySource) {
+                    $pickedItem = self::pickPropertyWithProbability($raritySource);
+                    $item = in_array($pickedItem, $object[$colorProperty], true)
+                        ? $pickedItem
+                        : $object[$colorProperty][(int)self::pickRandomProperty($object[$colorProperty])];
+                } else {
+                    $item = $object[$colorProperty][(int)self::pickRandomProperty($object[$colorProperty])];
+                }
+
+                $currentBatchData[$objectName] = [
+                    'property_1' => $colorProperty,
+                    'property_2' => $item,
+                ];
             }
 
-            $raritySource = $rarity[$objectName] ?? [];
+            if ($generatedDataCounter <= $totalUniqueVariationsAmount) {
+                $propertiesToJoin = [];
+                foreach ($currentBatchData as $properties) {
+                    $propertiesToJoin[] = $properties['property_1'];
+                    $propertiesToJoin[] = $properties['property_2'];
+                }
 
-            if ($raritySource) {
-                $pickedItem = self::pickPropertyWithProbability($raritySource);
-                $item = in_array($pickedItem, $object[$colorProperty], true)
-                    ? $pickedItem
-                    : $object[$colorProperty][self::pickRandomProperty($object[$colorProperty])];
+                $combinedKey = implode('_', $propertiesToJoin);
+
+                if (!isset($jsonData[$combinedKey])) {
+                    $jsonData[$combinedKey] = $currentBatchData;
+                } else {
+                    $generatedDataCounter--;
+                }
             } else {
-                $item = $object[$colorProperty][self::pickRandomProperty($object[$colorProperty])];
+                $jsonData[] = $currentBatchData;
             }
 
-            $dataToAppend[$objectName] = [
-                'property_1' => $colorProperty,
-                'property_2' => $item,
-            ];
+            $generatedDataCounter++;
+            // print_r($currentBatchData);
         }
-
-        print_r($dataToAppend);
 
         return $jsonData;
     }
